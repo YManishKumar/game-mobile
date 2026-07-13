@@ -9,23 +9,34 @@ import '../ai/strong_chess_ai.dart'
 import '../model/chess_game.dart';
 import '../model/chess_state.dart';
 import '../../shared/services/feedback_service.dart';
+import '../../shared/services/storage_service.dart';
 
 class ChessController extends StateNotifier<ChessState> {
-  ChessController(this._ai, {FeedbackService? feedback})
+  ChessController(this._ai, {FeedbackService? feedback, StorageService? storage})
       : _feedback = feedback ?? FeedbackService(),
-        _game = ChessGame(),
+        _storage = storage,
+        _game = _restore(storage),
         super(const ChessState(
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           isGameOver: false,
           isWhiteToMove: true,
           status: 'Your move',
         )) {
+    // When a saved FEN was restored, this immediately overwrites the fresh
+    // initial state above with the persisted position.
     _sync();
   }
 
   final ChessAi _ai;
   final FeedbackService _feedback;
+  final StorageService? _storage;
   ChessGame _game;
+
+  static ChessGame _restore(StorageService? storage) {
+    final fen = storage?.loadChessFen();
+    if (fen == null) return ChessGame();
+    return ChessGame.fromFen(fen);
+  }
 
   /// Human plays white. Applies the move, then lets the AI (black) reply.
   Future<void> playHumanMove(String uci) async {
@@ -52,6 +63,7 @@ class ChessController extends StateNotifier<ChessState> {
 
   void newGame() {
     _game = ChessGame();
+    _storage?.clearChessFen();
     state = const ChessState(
       fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
       isGameOver: false,
@@ -70,6 +82,7 @@ class ChessController extends StateNotifier<ChessState> {
       lastFrom: from ?? state.lastFrom,
       lastTo: to ?? state.lastTo,
     );
+    _storage?.saveChessFen(_game.fen);
   }
 
   String _statusText() {
@@ -97,5 +110,5 @@ final chessControllerProvider =
     StateNotifierProvider.autoDispose<ChessController, ChessState>((ref) {
   final ChessAi ai = createStrongChessAi(skill: 5, moveTimeMs: 800);
   ref.onDispose(ai.dispose);
-  return ChessController(ai);
+  return ChessController(ai, storage: ref.watch(storageProvider));
 });
