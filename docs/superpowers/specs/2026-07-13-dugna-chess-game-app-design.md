@@ -109,10 +109,16 @@ motion + polish:
 
 **Visual style**
 - Dark premium theme, deep gradients, glassmorphism panels, glow accents.
-- Chess: 2.5D board (perspective tilt, drop shadows, marble/wood textures), pieces
-  with depth.
+- Chess: **photoreal, image-based** board matching the user's reference — gold
+  ornate frame, marble squares, glossy pre-rendered piece sprites at a fixed
+  camera angle with baked shadows and a soft reflection. Optional perspective
+  tilt for the reference's angled look. (Not real-time 3D — a composited
+  fixed-angle scene; live 3D rotation is a later upgrade.)
 - Dugna: textured green felt table (matching the screenshot), realistic domino
   tiles with shadows.
+
+**Sound:** every piece move plays a satisfying wood/click SFX, with a distinct
+capture sound and a win sting — the "proper sound when moving" the user asked for.
 
 **Motion (the "cinematic")**
 - Animated home menu: parallax background, cards float/tilt on tap.
