@@ -1,6 +1,11 @@
 import 'package:flutter_riverpod/legacy.dart';
 import '../ai/chess_ai.dart';
-import '../ai/stockfish_chess_ai.dart';
+// Platform-aware AI factory: the native build (dart:library.io) uses Stockfish;
+// the web/default build falls back to a pure-Dart AI so `dart:ffi` never enters
+// the web bundle. This must be a compile-time switch — a runtime `kIsWeb` guard
+// cannot help because `package:stockfish` fails to compile for web at all.
+import '../ai/strong_chess_ai.dart'
+    if (dart.library.io) '../ai/strong_chess_ai_native.dart';
 import '../model/chess_game.dart';
 import '../model/chess_state.dart';
 
@@ -77,7 +82,7 @@ class ChessController extends StateNotifier<ChessState> {
 /// directly with RandomChessAi, so this provider is UI-only.
 final chessControllerProvider =
     StateNotifierProvider.autoDispose<ChessController, ChessState>((ref) {
-  final ai = StockfishChessAi(skill: 5, moveTimeMs: 800);
+  final ChessAi ai = createStrongChessAi(skill: 5, moveTimeMs: 800);
   ref.onDispose(ai.dispose);
   return ChessController(ai);
 });

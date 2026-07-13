@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../home/home_screen.dart';
+import '../chess/ui/chess_screen.dart';
 
 class Routes {
   static const home = '/';
@@ -11,8 +12,7 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
     case Routes.home:
       return _fade(const HomeScreen());
     case Routes.chess:
-      // Chess screen is wired in Task 11; placeholder until then.
-      return _fade(const Scaffold(body: Center(child: Text('Chess'))));
+      return _fade(const ChessScreen());
     default:
       return _fade(const HomeScreen());
   }
