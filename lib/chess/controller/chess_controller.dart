@@ -8,10 +8,12 @@ import '../ai/strong_chess_ai.dart'
     if (dart.library.io) '../ai/strong_chess_ai_native.dart';
 import '../model/chess_game.dart';
 import '../model/chess_state.dart';
+import '../../shared/services/feedback_service.dart';
 
 class ChessController extends StateNotifier<ChessState> {
-  ChessController(this._ai)
-      : _game = ChessGame(),
+  ChessController(this._ai, {FeedbackService? feedback})
+      : _feedback = feedback ?? FeedbackService(),
+        _game = ChessGame(),
         super(const ChessState(
           fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
           isGameOver: false,
@@ -22,20 +24,30 @@ class ChessController extends StateNotifier<ChessState> {
   }
 
   final ChessAi _ai;
+  final FeedbackService _feedback;
   ChessGame _game;
 
   /// Human plays white. Applies the move, then lets the AI (black) reply.
   Future<void> playHumanMove(String uci) async {
     if (_game.isGameOver || !state.isWhiteToMove) return;
+    final humanCaptures = _game.isOccupied(uci.substring(2, 4));
     if (!_game.makeUciMove(uci)) return; // ignore illegal taps
+    _feedback.impact();
+    _feedback.play(humanCaptures ? GameSound.capture : GameSound.move);
     _sync(from: uci.substring(0, 2), to: uci.substring(2, 4));
-    if (_game.isGameOver) return;
+    if (_game.isGameOver) {
+      _feedback.play(GameSound.win);
+      return;
+    }
 
     state = state.copyWith(thinking: true, status: 'AI thinking…');
     final aiMove = await _ai.bestMove(_game.fen);
+    final aiCaptures = _game.isOccupied(aiMove.substring(2, 4));
     _game.makeUciMove(aiMove);
+    _feedback.play(aiCaptures ? GameSound.capture : GameSound.move);
     _sync(from: aiMove.substring(0, 2), to: aiMove.substring(2, 4));
     state = state.copyWith(thinking: false);
+    if (_game.isGameOver) _feedback.play(GameSound.win);
   }
 
   void newGame() {
@@ -74,6 +86,7 @@ class ChessController extends StateNotifier<ChessState> {
   @override
   void dispose() {
     _ai.dispose();
+    _feedback.dispose();
     super.dispose();
   }
 }
